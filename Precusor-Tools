@@ -1,0 +1,55 @@
+import matplotlib.pyplot as plt
+import numpy as np
+C = np.linspace(0,14,100)
+N = np.linspace(0,14,100)
+M = np.linspace(0,14,100)
+NH = np.linspace(0,14,100)
+PH = np.linspace(1, 14, 100)
+for i in range(100):
+    r = root(func,[0,0,0,0],PH[i],method='lm')
+    R=r.x
+    N[i]=R[0]
+    C[i]=R[1]
+    M[i]=R[2] 
+    NH[i]=R[3] 
+plt.figure(figsize=(11.134,8.69))    # 定义一个图像窗口
+plt.title('Residual transition metal concentration(1:1:1)',fontproperties='Times New Roman', fontsize=26)
+plt.ylabel('[M] mol/L',fontproperties='Times New Roman', fontsize=26)
+plt.xlabel('pH',fontproperties='Times New Roman', fontsize=26)
+
+
+
+plt.xlim((2, 14))   #x轴的刻度范围被设为a到b
+plt.ylim((-0.02, 0.35))    #y轴的刻度范围被设为a'到b' 
+
+
+ 
+plt.xticks(fontsize=18) 
+plt.yticks(fontsize=18)
+ 
+ax = plt.gca()  #返回坐标轴
+axlinewidth = 6
+ax.spines['bottom'].set_linewidth(axlinewidth); #设置底部坐标轴的粗细
+ax.spines['left'].set_linewidth(axlinewidth); #设置左边坐标轴的粗细
+ax.spines['right'].set_linewidth(axlinewidth); #设置右边坐标轴的粗细
+ax.spines['top'].set_linewidth(axlinewidth); #设置上部坐标轴的粗细
+
+
+plt.rcParams['xtick.direction'] = 'in'  # 将x周的刻度线方向设置向内
+plt.rcParams['ytick.direction'] = 'in'  # 将y轴的刻度方向设置向内`
+
+plt.tick_params(which='major',width=3,length=6)
+
+plt.plot(PH,N,label='${Ni^{2+}}$',color="green", linewidth=12) # 绘制曲线
+plt.plot(PH,C,color="red",label='${Co^{2+}}$',linewidth=12) # 绘制曲线 
+plt.plot(PH,M,label='${Mn^{2+}}$',color="black",linewidth=12) # 绘制曲线
+
+#plt.plot(PH,NH,color="blue") # 绘制曲线 
+
+plt.axvspan( 10, 12 ,facecolor='r', alpha=0.2)
+plt.legend(loc=0, fontsize=18, frameon=False,ncol=1)
+
+#plt.show()
+
+
+plt.savefig('C:/Users/dell/Desktop/111.jpg',dpi=300)
