@@ -1,0 +1,162 @@
+from tkinter import *
+import tkinter.filedialog
+import xlrd
+import math
+import matplotlib
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backend_bases import key_press_handler
+from matplotlib.figure import Figure
+
+root = Tk()
+root.geometry('1024x760')
+root.title('三元前驱体反应过程估算')
+lb1 = Label(root, text='盐浓度（mol/L）')
+lb1.place(relx=0.1, rely=0.01, relwidth=0.1, relheight=0.05)
+lb2 = Label(root, text='碱浓度（mol/L）')
+lb2.place(relx=0.2, rely=0.01, relwidth=0.1, relheight=0.05)
+lb3 = Label(root, text='氨浓度（mol/L）')
+lb3.place(relx=0.3, rely=0.01, relwidth=0.1, relheight=0.05)
+inp1 = Entry(root)
+inp1.place(relx=0.1, rely=0.07, relwidth=0.1, relheight=0.03)
+inp2 = Entry(root)
+inp2.place(relx=0.2, rely=0.07, relwidth=0.1, relheight=0.03)
+inp3 = Entry(root)
+inp3.place(relx=0.3, rely=0.07, relwidth=0.1, relheight=0.03)
+
+
+
+lb4 = Label(root, text='反应釜体积（L）')
+lb4.place(relx=0.1, rely=0.11, relwidth=0.1, relheight=0.05)
+lb5 = Label(root, text='已反应时间（h）')
+lb5.place(relx=0.2, rely=0.11, relwidth=0.1, relheight=0.05)
+lb6 = Label(root, text='总进料速率（L/h）')
+lb6.place(relx=0.3, rely=0.11, relwidth=0.1, relheight=0.05)
+inp4 = Entry(root)
+inp4.place(relx=0.1, rely=0.17, relwidth=0.1, relheight=0.03)
+inp5 = Entry(root)
+inp5.place(relx=0.2, rely=0.17, relwidth=0.1, relheight=0.03)
+inp6 = Entry(root)
+inp6.place(relx=0.3, rely=0.17, relwidth=0.1, relheight=0.03)
+
+#文本框
+txt = Text(root)
+txt.place(relx=0.45,rely=0.06,relwidth=0.5,relheight=0.25)
+
+
+#绘图区域
+#cv = Canvas(root,bg = 'white')
+#cv.create_rectangle(10,10,110,110)
+#cv.place(relx=0.1, rely=0.32, relwidth=0.85, relheight=0.6)
+#图像及画布
+fig = plt.figure(figsize=(10,4),dpi=100)#图像比例
+f_plot =fig.add_subplot(111)#划分区域
+canvas_spice = FigureCanvasTkAgg(fig,root)
+canvas_spice.get_tk_widget().place(relx=0.1, rely=0.32, relwidth=0.85, relheight=0.6)#放置位置
+
+
+
+#函数定义
+#导入文件
+def xz():
+    filename=tkinter.filedialog.askopenfilename()
+    if filename != '':
+         inp0.insert(0,''+filename)
+         
+    else:
+         inp0.insert(0,'您没有选择任何文件')
+
+def func(x,a,r):
+    return a-r*x
+
+    
+def cal():
+    filename=inp0.get()
+    xl=xlrd.open_workbook(filename) 
+    table = xl.sheets()[0]
+    sheet= xl.sheet_by_index(0)
+    
+    vol=float(inp4.get())
+    vel=float(inp6.get())
+    t=float(inp5.get())
+    inp4.delete(0, END)
+    inp5.delete(0, END)
+    inp6.delete(0, END)
+    c0=120
+    D=-vol*math.log(c0)/vel
+    c=c0-math.exp(-(t+D)*vel/vol)  
+    N_cytal=0
+    time_remain=vol/vel
+    ratio=1-2*vel/vol
+    A1=[]
+    B1=[]
+    C1=[]
+    C_x=[]
+    C_y=[]
+    for i in range(1,sheet.nrows):
+        C1.append(1000000000000*c*sheet.cell_value(i,1)/(2*100*np.power(sheet.cell_value(i,0),3)))
+        C_x.append(sheet.cell_value(i,0))
+        C_y.append(sheet.cell_value(i,1))
+    for i in range(37,43):
+        A1.append(sheet.cell_value(i,0))
+        B1.append(c*sheet.cell_value(i,1)/np.power(sheet.cell_value(i,0),3))
+    for i in range(0, len(C1)):
+        N_cytal= N_cytal +C1[i]
+    y=41.446+np.log(B1)
+    x=A1
+    X= np.asarray(A1)
+    Y = np.asarray(y)
+    popt,pcov=curve_fit(func,X,Y,[0,40])
+    a=popt[0]
+    r=popt[1]
+    v_crytal=1/(1000000*60*60*r*time_remain)
+    v_ker=np.exp(a)*(1/(1000000*r*time_remain*60*60)) 
+    
+    #D50粗略预测
+    D50=0.0
+    total_crytal=0.0
+    x_50=C_x+2*v_crytal*60*60*1000000
+    for i in range(1,len(C1)):
+        total_crytal=total_crytal+0.1*0.1*0.1*v_ker+C1[i]*ratio*np.power(x_50[i],3)
+    total=0.1*0.1*0.1*v_ker/total_crytal
+    for i in range(1,len(C1)):
+        total=total+C1[i]*ratio*np.power(x_50[i],3)/total_crytal
+        if total>0.65:
+            D50=x_50[i]
+            break
+    s='反应釜体积为：%f，总进料速率：%f,已反应时间：%f\n该时刻固含量约为：%f,颗粒数量为：%e\n晶体生长速率：%e,形核率：%e\n两小时后D50粗略估计%f\n' % (vol,vel,t,c,N_cytal,v_crytal,v_ker,D50)
+    txt.insert(END, s) 
+    #画图
+    yval=func(X,a,r)#拟合完参数之后 就用拟合之后的参数来计算函数的值，即得到拟合拟合曲线的数值
+    plt.scatter(X,Y)#原始数据画图
+    plt.plot(X,yval,'g',label='$log{n_{0}}$=%5.3f,τ=%5.3f'%tuple(popt))#拟合之后的数据画图 tuple是把列表变成元组
+    plt.ylabel('Logarithmic Number of Density')
+    plt.xlabel('Size')
+    plt.legend()
+    canvas_spice.draw()
+   
+
+
+#文件导入按钮
+btn=Button(root,text='选择粒度分布数据',command=xz)
+btn.place(relx=0.1, rely=0.23, relwidth=0.1, relheight=0.03)
+inp0 = Entry(root)
+inp0.place(relx=0.21, rely=0.23, relwidth=0.19, relheight=0.03)
+
+import math
+#分析按钮
+
+    
+btn=Button(root,text='分析',command=cal)
+btn.place(relx=0.1, rely=0.28, relwidth=0.3, relheight=0.03)
+#inpcal = Entry(root)
+#inpcal.place(relx=0.1, rely=0.31, relwidth=0.1, relheight=0.03)
+
+
+
+#晶体数量N_cytal
+
+
+root.mainloop()
