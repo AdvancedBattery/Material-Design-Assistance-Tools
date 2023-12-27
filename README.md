@@ -2,8 +2,8 @@
 Creation date：2022.07-09<br>
 ## Description：<br>
 ### 1、Machine learning assisted co-precipitation synthesis
-  * Theoretical calculation of reaction parameters<br>
-  Ni, Co, and Mn ion concentrations were calculated with pH under different reaction conditions. <br>
+  * Theoretical calculation program<br>
+  Theoretical calculation of reaction parameters:Ni, Co, and Mn ion concentrations were calculated with pH under different reaction conditions. <br>
   * A particle growth modeling procedure<br>
   Can quickly obtain crystal nucleation and growth rates and predict growth trends.
   * Digitally model<br>
