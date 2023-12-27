@@ -1,6 +1,6 @@
-# Material-Design-Assistance-Tools
+## Material-Design-Assistance-Tools
 Creation date：2022.07-09<br>
-# Schedules：<br>
+## Description：<br>
 ### 1、Machine learning assisted co-precipitation synthesis
   * Theoretical calculation of reaction parameters<br>
   Ni, Co, and Mn ion concentrations were calculated with pH under different reaction conditions. <br>
