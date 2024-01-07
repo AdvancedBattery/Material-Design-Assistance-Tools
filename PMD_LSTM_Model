@@ -1,0 +1,145 @@
+from tensorflow.keras.models import Model
+from tensorflow.keras import layers
+from tensorflow.keras import Input
+import numpy as np
+from keras.utils import to_categorical
+import cv2 as cv
+import os
+from matplotlib import pyplot as plt
+from numpy import genfromtxt
+
+train_x=[]
+#train_x=np.array(train_x)
+evaluate_x=[]
+#evaluate_x=np.array(evaluate_x)
+
+def read_path_part(file_pathname):
+    # 遍历该目录下的所有图片文件
+
+    for filename in os.listdir(file_pathname):
+        
+        src = cv.imread(file_pathname + '/' + filename,0)
+        #mask_local = cv.adaptiveThreshold(src=img,maxValue=255,adaptiveMethod=cv.ADAPTIVE_THRESH_MEAN_C,thresholdType=cv.THRESH_BINARY,blockSize=11,C=1)
+        #print(mask_local.shape)
+        train_x.append(src)
+        #print(train_x.shape)
+
+def read_path_eva(file_pathname):
+    # 遍历该目录下的所有图片文件
+    
+    for filename in os.listdir(file_pathname):
+        img = cv.imread(file_pathname + '/' + filename,0)
+        #mask_local = cv.adaptiveThreshold(src=img,maxValue=255,adaptiveMethod=cv.ADAPTIVE_THRESH_MEAN_C,thresholdType=cv.THRESH_BINARY,blockSize=11,C=1)
+        evaluate_x.append(img)
+
+#x=read_path_part('E:/precursordata/1000rpm/')
+
+read_path_part('E:/precursordata/1000rpm/')
+read_path_part('E:/precursordata/an02/')
+read_path_part('E:/precursordata/an06/')
+read_path_part('E:/precursordata/ph12/')
+read_path_part('E:/precursordata/ph108/')
+read_path_part('E:/precursordata/ph116/')
+read_path_part('E:/precursordata/rpm600/')
+read_path_part('E:/precursordata/time2/')
+read_path_part('E:/precursordata/time3/')
+read_path_part('E:/precursordata/time4/')
+read_path_part('E:/precursordata/time5/')
+read_path_part('E:/precursordata/time6/')
+read_path_part('E:/precursordata/time7/')
+read_path_part('E:/precursordata/time8/')
+#read_path_full('E:/test/')
+
+#train_full=np.array(train_full)
+
+train_y_ph = genfromtxt("E:/test/precusordata_ph.csv", delimiter=',')
+train_y_ammo = genfromtxt("E:/test/precusordata_ammo.csv", delimiter=',')
+train_y_v = genfromtxt("E:/test/precusordata_v.csv", delimiter=',')
+train_y_time = genfromtxt("E:/test/precusordata_time.csv", delimiter=',')
+train_size = genfromtxt("E:/test/size.csv", delimiter=',')
+eva_size   = genfromtxt("E:/test/eva_size.csv", delimiter=',')
+
+
+train_x=np.array(train_x)
+train_y_ph.shape
+train_y_ph.shape
+
+read_path_eva('E:/evaluate/')
+evaluate_x=np.array(evaluate_x)
+evaluate_ph = genfromtxt("E:/test/evaluate_ph.csv", delimiter=',')
+evaluate_ammo = genfromtxt("E:/test/evaluate_ammo.csv", delimiter=',')
+evaluate_v = genfromtxt("E:/test/evaluate_v.csv", delimiter=',')
+evaluate_time = genfromtxt("E:/test/evaluate_time.csv", delimiter=',')
+
+
+train_y_ph  =to_categorical(train_y_ph- 1,10)
+train_y_ammo  =to_categorical(train_y_ammo- 1,10)
+train_y_v  =to_categorical(train_y_v- 1,10)
+train_y_time  =to_categorical(train_y_time- 1,10)
+
+train_size = to_categorical(train_size- 1, 10)
+evaluate_ph = to_categorical(evaluate_ph- 1, 10)
+evaluate_ammo = to_categorical(evaluate_ammo- 1, 10)
+evaluate_v = to_categorical(evaluate_v- 1, 10)
+evaluate_time = to_categorical(evaluate_time- 1, 10)
+eva_size = to_categorical(eva_size, 10)
+
+train_x = train_x.astype(np.float32)
+train_x/=255
+evaluate_x = evaluate_x.astype(np.float32)
+evaluate_x/=255
+#分十类：pH代表10-12；氨浓度0.2-1，0.08；搅拌速率400-1000，60；时间2-12,0.8.
+
+
+train_x
+
+
+enlarge_precusor_input = Input(shape=(150,150),  name='enlarge_picture')
+size_input = Input(shape=(10,),  name='size_input')
+#pH_prediction = Input(shape=(10,),  name='pH_prediction')
+#Ammonia_prediction = Input(shape=(10,),  name='Ammonia_prediction')
+#v_prediction = Input(shape=(10,),  name='v_prediction')
+#time_prediction = Input(shape=(10,),  name='time_prediction')
+x1=layers.LSTM(units =256,input_shape = (150,150))(enlarge_precusor_input)
+#x11=layers.LSTM(units =64,input_shape = (64,))(x1)
+#x3=layers.LSTM(units =10,input_shape = (150,150))(x2)
+x_dense = layers.Dense(128)(x1)
+#x2 = layers.Dense(128)(x_dense)
+#x3 = layers.Dense(64)(x2)
+#x4 = layers.Dense(32)(x_dense)
+#x5 = layers.Dense(16)(x4)
+#x6 = layers.Dense(10, activation='softmax')(x5)
+#x1_dense = layers.Dense(128, activation='softmax')(x1)
+#x_dense_flatten= layers.Flatten()(x4)
+#x_size_flatten= layers.Flatten()(size_input)
+x=layers.concatenate([x_dense,size_input])
+time_prediction = layers.Dense(10,activation='softmax',name='TIME')(x)
+pH_prediction = layers.Dense(10, activation='softmax',name='pH')(x)
+Ammonia_prediction = layers.Dense(10, activation='softmax',name='Ammonia')(x)
+v_prediction = layers.Dense(10,activation='softmax', name='v')(x)
+
+model = Model([enlarge_precusor_input,size_input], [pH_prediction,Ammonia_prediction,v_prediction,time_prediction], name='Precusor')
+
+model.summary()
+
+
+model.compile(optimizer='Adam',
+              loss='categorical_crossentropy',
+              
+              metrics = 'accuracy')
+			  
+			  
+			  
+			  
+train_size.shape
+
+history=model.fit([train_x, train_size],[train_y_ph,train_y_ammo,train_y_v,train_y_time],epochs=500, batch_size=150,validation_data = ([evaluate_x,eva_size],[evaluate_ph,evaluate_ammo,evaluate_v,evaluate_time]),verbose = 1)
+
+
+
+#评估
+score = model.evaluate([evaluate_x,eva_size],[evaluate_ph,evaluate_ammo,evaluate_v,evaluate_time],batch_size = 150,verbose =1)
+print('loss:',score[0])
+print('acc:',score[1])
+
+print(history.history.keys())
